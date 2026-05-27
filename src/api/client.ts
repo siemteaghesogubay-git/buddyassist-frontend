@@ -27,6 +27,7 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  // ── AUTH ──────────────────────────────────────
   login: (email: string, password: string) =>
     request<{ token: string; name: string; userId: number; role: string }>("/auth/login", {
       method: "POST",
@@ -39,6 +40,7 @@ export const api = {
       body: JSON.stringify({ name, email, password, city }),
     }),
 
+  // ── MISSIONS ──────────────────────────────────
   getMissions: () => request<any[]>("/missions"),
 
   createMission: (mission: any) =>
@@ -65,6 +67,7 @@ export const api = {
   deleteMission: (id: number) =>
     request<any>(`/missions/${id}`, { method: "DELETE" }),
 
+  // ── USERS ─────────────────────────────────────
   getUsers: () => request<any[]>("/users"),
 
   pauseUser: (id: number) =>
@@ -76,21 +79,42 @@ export const api = {
   deleteUser: (id: number) =>
     request<any>(`/users/${id}`, { method: "DELETE" }),
 
+  updateProfileImage: (imageBase64: string) =>
+    request<{ profileImage: string }>("/users/profile-image", {
+      method: "PUT",
+      body: JSON.stringify({ imageBase64 }),
+    }),
+
+  getProfileImage: (id: number) =>
+    request<{ profileImage: string }>(`/users/${id}/profile-image`),
+
+  // ── ADS ───────────────────────────────────────
+  getAds: () => request<any[]>("/ads"),
+
+  getAllAds: () => request<any[]>("/ads/all"),
+
+  createAd: (ad: any) =>
+    request<any>("/ads", {
+      method: "POST",
+      body: JSON.stringify(ad),
+    }),
+
+  deleteAd: (id: number) =>
+    request<any>(`/ads/${id}`, { method: "DELETE" }),
+
+  clickAd: (id: number) =>
+    request<any>(`/ads/${id}/click`, { method: "POST" }),
 
 
-  getAds: () => request<any[]>("/ads"),getAllAds: () => request<any[]>("/ads/all"),
 
-createAd: (ad: any) =>
-  request<any>("/ads", {
-    method: "POST",
-    body: JSON.stringify(ad),
+  editUser: (id: number, data: { name?: string; city?: string; role?: string; clearProfileImage?: boolean }) =>
+  request<any>(`/users/${id}/edit`, {
+    method: "PUT",
+    body: JSON.stringify({
+      name: data.name,
+      city: data.city,
+      role: data.role,
+      clearProfileImage: data.clearProfileImage ?? false,
+    }),
   }),
-
-deleteAd: (id: number) =>
-  request<any>(`/ads/${id}`, { method: "DELETE" }),
-
-clickAd: (id: number) =>
-  request<any>(`/ads/${id}/click`, { method: "POST" }),
-
-
 }

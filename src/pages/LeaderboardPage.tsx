@@ -8,18 +8,14 @@ interface LeaderboardUser {
   totalPoints: number
   completedMissions: number
   currentLevel: string
-  role: string
   isPaused: boolean
 }
 
-const RANK_COLORS = ["#EF9F27", "#B4B2A9", "#D85A30"]
-const MEDALS = ["🥈", "🥇", "🥉"]
-const PODIUM_HEIGHTS = [100, 130, 85]
-const PODIUM_ORDER = [1, 0, 2]
-
-function getInitials(name: string): string {
+function getInitials(name: string) {
   return name.split(" ").map(n => n[0]).join("").toUpperCase()
 }
+
+const AVATAR_COLORS = ["#4F6EF7","#8B5CF6","#F59E0B","#22C55E","#EF4444","#06B6D4"]
 
 function getBadge(missions: number): string {
   if (missions >= 100) return "🏆"
@@ -31,140 +27,141 @@ function getBadge(missions: number): string {
   return ""
 }
 
-const AVATAR_COLORS = ["#1D9E75","#D85A30","#EF9F27","#178BDD","#D4537E","#639922","#7F77DD"]
-
 export function LeaderboardPage() {
   const [users, setUsers] = useState<LeaderboardUser[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const data = await api.getUsers()
-        // Filtrera bort pausade användare
-        setUsers(data.filter((u: LeaderboardUser) => !u.isPaused))
-      } catch {
-        console.error("Kunde inte hämta leaderboard")
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchUsers()
+    api.getUsers()
+      .then(data => setUsers((data ?? []).filter((u: LeaderboardUser) => !u.isPaused)))
+      .finally(() => setLoading(false))
   }, [])
 
-  if (loading) {
-    return (
-      <div style={{ textAlign: "center", padding: "2rem", color: "#888" }}>
-        Laddar leaderboard...
-      </div>
-    )
-  }
-
-  if (users.length === 0) {
-    return (
-      <div style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>
-        Inga användare än.
-      </div>
-    )
-  }
-
   const top3 = users.slice(0, 3)
-  
 
   return (
-    <div>
-      <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 15, fontWeight: 700, marginBottom: 16 }}>
-        Topp hjälpare – Stockholm
-      </div>
+    <div style={{ maxWidth: 700 }}>
+      <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 22, fontWeight: 700, marginBottom: 28 }}>
+        🏆 Topp hjälpare
+      </h1>
 
-      {/* Podium – visa bara om 3+ användare */}
-      {top3.length === 3 && (
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-end", gap: 12, marginBottom: "1.5rem", padding: "1rem 0" }}>
-          {PODIUM_ORDER.map((i, pos) => {
-            const user = top3[i]
-            if (!user) return null
-            return (
-              <div key={user.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                <div style={{ fontSize: 20 }}>{MEDALS[pos]}</div>
-                <div style={{
-                  width: 44, height: 44, borderRadius: "50%",
-                  background: AVATAR_COLORS[i % AVATAR_COLORS.length],
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 14, fontWeight: 600, color: "#fff",
-                  border: pos === 1 ? "2px solid #EF9F27" : "none",
-                }}>
-                  {getInitials(user.name)}
-                </div>
-                <div style={{ fontSize: 12, fontWeight: 500 }}>
-                  {user.name.split(" ")[0]}
-                </div>
-                <div style={{
-                  width: 64, height: PODIUM_HEIGHTS[pos],
-                  background: pos === 1 ? "#E1F5EE" : "#f1f0ec",
-                  border: pos === 1 ? "1px solid #9FE1CB" : "1px solid #e0e0dc",
-                  borderRadius: "6px 6px 0 0",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 16, fontWeight: 700,
-                  color: pos === 1 ? "#1D9E75" : "#888",
+      {loading ? (
+        <div style={{ textAlign: "center", padding: "3rem", color: "var(--text-secondary)" }}>Laddar...</div>
+      ) : (
+        <>
+          {/* Podium */}
+          {top3.length === 3 && (
+            <div style={{
+              background: "var(--bg-card)", border: "1px solid var(--border)",
+              borderRadius: 16, padding: "24px 20px", marginBottom: 20,
+              display: "flex", justifyContent: "center", alignItems: "flex-end",
+              gap: 16,
+            }}>
+              {[top3[1], top3[0], top3[2]].map((user, pos) => {
+                const heights = [100, 130, 85]
+                const medals = ["🥈", "🥇", "🥉"]
+                const rank = [2, 1, 3]
+                return (
+                  <div key={user.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                    <div style={{ fontSize: 20 }}>{medals[pos]}</div>
+                    <div style={{
+                      width: 52, height: 52, borderRadius: "50%",
+                      background: `linear-gradient(135deg, ${AVATAR_COLORS[rank[pos] % AVATAR_COLORS.length]}, ${AVATAR_COLORS[(rank[pos] + 2) % AVATAR_COLORS.length]})`,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 16, fontWeight: 700, color: "#fff",
+                      border: pos === 1 ? "3px solid #F59E0B" : "none",
+                      boxShadow: pos === 1 ? "0 0 20px rgba(245,158,11,0.4)" : "none",
+                    }}>
+                      {getInitials(user.name)}
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{user.name.split(" ")[0]}</div>
+                    <div style={{ fontSize: 12, color: "#F59E0B", fontWeight: 600 }}>
+                      ⭐ {user.totalPoints}
+                    </div>
+                    <div style={{
+                      width: 72, height: heights[pos],
+                      background: pos === 1 ? "rgba(245,158,11,0.15)" : "var(--bg-secondary)",
+                      border: `1px solid ${pos === 1 ? "rgba(245,158,11,0.3)" : "var(--border)"}`,
+                      borderRadius: "8px 8px 0 0",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontFamily: "'Space Grotesk', sans-serif",
+                      fontSize: 20, fontWeight: 700,
+                      color: pos === 1 ? "#F59E0B" : "var(--text-secondary)",
+                    }}>
+                      {rank[pos]}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Full list */}
+          <div style={{
+            background: "var(--bg-card)", border: "1px solid var(--border)",
+            borderRadius: 16, overflow: "hidden",
+          }}>
+            <div style={{
+              display: "grid", gridTemplateColumns: "40px 1fr auto auto",
+              padding: "12px 20px", borderBottom: "1px solid var(--border)",
+              fontSize: 12, color: "var(--text-muted)", fontWeight: 500,
+            }}>
+              <span>#</span>
+              <span>Hjälpare</span>
+              <span style={{ textAlign: "right", marginRight: 40 }}>Uppdrag</span>
+              <span style={{ textAlign: "right" }}>Poäng</span>
+            </div>
+
+            {users.map((user, i) => (
+              <div key={user.id} style={{
+                display: "grid",
+                gridTemplateColumns: "40px 1fr auto auto",
+                padding: "14px 20px",
+                borderBottom: i < users.length - 1 ? "1px solid var(--border)" : "none",
+                alignItems: "center",
+                transition: "background 0.1s",
+              }}
+                onMouseEnter={e => e.currentTarget.style.background = "var(--bg-hover)"}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+              >
+                <span style={{
+                  fontFamily: "'Space Grotesk', sans-serif",
+                  fontSize: 14, fontWeight: 700,
+                  color: i === 0 ? "#F59E0B" : i === 1 ? "#9CA3AF" : i === 2 ? "#F59E0B" : "var(--text-muted)",
                 }}>
                   {i + 1}
+                </span>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: "50%",
+                    background: `linear-gradient(135deg, ${AVATAR_COLORS[i % AVATAR_COLORS.length]}, ${AVATAR_COLORS[(i + 2) % AVATAR_COLORS.length]})`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 13, fontWeight: 700, color: "#fff",
+                  }}>
+                    {getInitials(user.name)}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 500 }}>{user.name}</div>
+                    <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>{user.city}</div>
+                  </div>
+                </div>
+
+                <span style={{ fontSize: 13, color: "var(--text-secondary)", textAlign: "right", marginRight: 40 }}>
+                  {user.completedMissions}
+                </span>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "flex-end" }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#F59E0B" }}>
+                    ⭐ {user.totalPoints}
+                  </span>
+                  <span style={{ fontSize: 16 }}>{getBadge(user.completedMissions)}</span>
                 </div>
               </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Full lista */}
-      <div style={{ border: "1px solid #e0e0dc", borderRadius: 12, overflow: "hidden" }}>
-        {users.map((user, i) => (
-          <div key={user.id} style={{
-            display: "flex", alignItems: "center", gap: 12,
-            padding: "12px 16px",
-            borderBottom: i < users.length - 1 ? "1px solid #e0e0dc" : "none",
-            background: "#fff",
-            transition: "background 0.1s",
-          }}
-            onMouseEnter={e => (e.currentTarget.style.background = "#f9f9f7")}
-            onMouseLeave={e => (e.currentTarget.style.background = "#fff")}
-          >
-            {/* Rank */}
-            <div style={{
-              fontFamily: "'Space Grotesk', sans-serif",
-              fontSize: 14, fontWeight: 700, width: 24,
-              color: i < 3 ? RANK_COLORS[i] : "#aaa",
-            }}>
-              {i + 1}
-            </div>
-
-            {/* Avatar */}
-            <div style={{
-              width: 34, height: 34, borderRadius: "50%",
-              background: AVATAR_COLORS[i % AVATAR_COLORS.length],
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 13, fontWeight: 600, color: "#fff", flexShrink: 0,
-            }}>
-              {getInitials(user.name)}
-            </div>
-
-            {/* Info */}
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 500 }}>
-                {user.name}
-              </div>
-              <div style={{ fontSize: 11, color: "#aaa" }}>
-                {user.completedMissions} uppdrag · {user.city}
-              </div>
-            </div>
-
-            <div style={{ fontSize: 16 }}>{getBadge(user.completedMissions)}</div>
-
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#1D9E75" }}>
-              {user.totalPoints} pts
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      )}
     </div>
   )
 }

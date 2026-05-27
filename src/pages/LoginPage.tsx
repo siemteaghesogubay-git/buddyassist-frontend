@@ -32,112 +32,126 @@ export function LoginPage({ onLogin }: Props) {
 
   return (
     <div style={{
-      minHeight: "100vh", background: "#f5f3ee",
-      display: "flex", flexDirection: "column",
-      alignItems: "center", justifyContent: "center",
-      padding: "24px", fontFamily: "'DM Sans', sans-serif",
+      minHeight: "100vh",
+      background: "var(--bg-primary)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24,
     }}>
-      <div style={{ textAlign: "center", marginBottom: 32, maxWidth: 480 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 12 }}>
-          <div style={{ fontSize: 36 }}>🤝</div>
-          <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 32, fontWeight: 700, color: "#085041" }}>
-            Buddy<span style={{ color: "#1D9E75" }}>Assist</span>
+      <div style={{ width: "100%", maxWidth: 420 }}>
+
+        {/* Logo */}
+        <div style={{ textAlign: "center", marginBottom: 40 }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: 18,
+            background: "linear-gradient(135deg, #4F6EF7, #8B5CF6)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 32, margin: "0 auto 16px",
+          }}>🤝</div>
+          <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 28, fontWeight: 700 }}>
+            Buddy<span style={{ color: "var(--accent-blue)" }}>Assist</span>
+          </h1>
+          <p style={{ color: "var(--text-secondary)", fontSize: 14, marginTop: 6 }}>
+            Lokal hjälp & belöningssystem
+          </p>
+        </div>
+
+        {/* Card */}
+        <div style={{
+          background: "var(--bg-card)",
+          border: "1px solid var(--border)",
+          borderRadius: 20, padding: 28,
+        }}>
+          {/* Toggle */}
+          <div style={{
+            display: "flex", background: "var(--bg-secondary)",
+            borderRadius: 12, padding: 4, marginBottom: 24,
+          }}>
+            {["Logga in", "Registrera"].map((label, i) => (
+              <button key={label} onClick={() => setIsRegister(i === 1)} style={{
+                flex: 1, fontFamily: "inherit", fontSize: 14, fontWeight: 500,
+                padding: "10px", borderRadius: 10, border: "none",
+                background: isRegister === (i === 1) ? "var(--accent-blue)" : "transparent",
+                color: isRegister === (i === 1) ? "#fff" : "var(--text-secondary)",
+                cursor: "pointer", transition: "all 0.15s",
+              }}>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {isRegister && (
+              <>
+                <div>
+                  <label style={{ fontSize: 12, color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>Namn</label>
+                  <input value={name} onChange={e => setName(e.target.value)} placeholder="Ditt namn" />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>Stad</label>
+                  <input value={city} onChange={e => setCity(e.target.value)} placeholder="Din stad" />
+                </div>
+              </>
+            )}
+
+            <div>
+              <label style={{ fontSize: 12, color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>E-post</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="din@email.com" />
+            </div>
+
+            <div>
+              <label style={{ fontSize: 12, color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>Lösenord</label>
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
+            </div>
+
+            {error && (
+              <div style={{
+                background: "#EF444420", border: "1px solid #EF444440",
+                borderRadius: 10, padding: "10px 14px",
+                fontSize: 13, color: "#EF4444",
+              }}>
+                {error}
+              </div>
+            )}
+
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              style={{
+                fontFamily: "inherit", fontSize: 14, fontWeight: 600,
+                padding: "13px", borderRadius: 12, border: "none",
+                background: loading ? "var(--bg-hover)" : "var(--accent-blue)",
+                color: loading ? "var(--text-secondary)" : "#fff",
+                cursor: loading ? "default" : "pointer",
+                marginTop: 4, transition: "background 0.15s",
+              }}
+            >
+              {loading ? "Laddar..." : isRegister ? "Skapa konto" : "Logga in"}
+            </button>
           </div>
         </div>
-        <p style={{ fontSize: 16, color: "#4a6741", fontWeight: 500, marginBottom: 4 }}>
-          Lokal hjälp & belöningssystem
-        </p>
-        <p style={{ fontSize: 14, color: "#888", lineHeight: 1.6 }}>
-          BuddyAssist gör det enkelt att be om hjälp, hjälpa andra och bli belönad.
-        </p>
-      </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, maxWidth: 560, width: "100%", marginBottom: 32 }}>
-        {[
-          { icon: "👥", title: "Lokal hjälp",   desc: "Be om eller erbjud hjälp" },
-          { icon: "⭐", title: "Tjäna poäng",   desc: "Hjälp andra och samla poäng" },
-          { icon: "🎁", title: "Få belöningar", desc: "Använd dina poäng" },
-          { icon: "📍", title: "Gemenskap",     desc: "Tillsammans skapar vi trygghet" },
-        ].map(({ icon, title, desc }) => (
-          <div key={title} style={{ background: "#fff", borderRadius: 12, padding: "12px 10px", textAlign: "center", border: "1px solid #e8e6e0" }}>
-            <div style={{ fontSize: 22, marginBottom: 4 }}>{icon}</div>
-            <div style={{ fontSize: 11, fontWeight: 600, color: "#085041", marginBottom: 2 }}>{title}</div>
-            <div style={{ fontSize: 10, color: "#888", lineHeight: 1.4 }}>{desc}</div>
-          </div>
-        ))}
-      </div>
-
-      <div style={{ background: "#fff", borderRadius: 16, padding: 28, width: "100%", maxWidth: 400, border: "1px solid #e8e6e0", boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}>
-        <div style={{ display: "flex", background: "#f5f3ee", borderRadius: 10, padding: 4, marginBottom: 20 }}>
-          {["Logga in", "Registrera"].map((label, i) => (
-            <button key={label} onClick={() => setIsRegister(i === 1)} style={{
-              flex: 1, fontFamily: "inherit", fontSize: 14, fontWeight: 500,
-              padding: "8px", borderRadius: 8, border: "none",
-              background: isRegister === (i === 1) ? "#fff" : "transparent",
-              color: isRegister === (i === 1) ? "#085041" : "#888",
-              cursor: "pointer",
-              boxShadow: isRegister === (i === 1) ? "0 1px 4px rgba(0,0,0,0.1)" : "none",
-            }}>
-              {label}
-            </button>
+        {/* Badges */}
+        <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 28 }}>
+          {[
+            { icon: "🥉", label: "Brons" },
+            { icon: "🥈", label: "Silver" },
+            { icon: "🥇", label: "Guld" },
+            { icon: "💎", label: "Diamant" },
+            { icon: "⭐", label: "Stjärna" },
+          ].map(({ icon, label }) => (
+            <div key={label} style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 22 }}>{icon}</div>
+              <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>{label}</div>
+            </div>
           ))}
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {isRegister && (
-            <>
-              <Field label="Namn"><input value={name} onChange={e => setName(e.target.value)} placeholder="Ditt namn" style={inputStyle} /></Field>
-              <Field label="Stad"><input value={city} onChange={e => setCity(e.target.value)} placeholder="Din stad" style={inputStyle} /></Field>
-            </>
-          )}
-          <Field label="E-post"><input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="din@email.com" style={inputStyle} /></Field>
-          <Field label="Lösenord"><input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" style={inputStyle} /></Field>
-
-          {error && (
-            <div style={{ fontSize: 12, color: "#A32D2D", background: "#FEE", padding: "8px 12px", borderRadius: 8, border: "1px solid #FFCCCC" }}>
-              {error}
-            </div>
-          )}
-
-          <button onClick={handleSubmit} disabled={loading} style={{
-            fontFamily: "inherit", fontSize: 14, fontWeight: 600,
-            padding: "12px", borderRadius: 10, border: "none",
-            background: loading ? "#9FE1CB" : "#1D9E75",
-            color: "#fff", cursor: loading ? "default" : "pointer", marginTop: 4,
-          }}>
-            {loading ? "Laddar..." : isRegister ? "Skapa konto" : "Logga in"}
-          </button>
-        </div>
+        <p style={{ textAlign: "center", fontSize: 12, color: "var(--text-muted)", marginTop: 20 }}>
+          Små insatser. <span style={{ color: "var(--accent-blue)" }}>Stor skillnad.</span>
+        </p>
       </div>
-
-      <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 24 }}>
-        {[{ icon: "🥉", label: "Brons", req: "5 uppdrag" }, { icon: "🥈", label: "Silver", req: "10 uppdrag" }, { icon: "🥇", label: "Guld", req: "15 uppdrag" }, { icon: "💎", label: "Diamant", req: "30 uppdrag" }].map(({ icon, label, req }) => (
-          <div key={label} style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 20 }}>{icon}</div>
-            <div style={{ fontSize: 10, fontWeight: 600, color: "#085041" }}>{label}</div>
-            <div style={{ fontSize: 9, color: "#aaa" }}>{req}</div>
-          </div>
-        ))}
-      </div>
-
-      <p style={{ marginTop: 24, fontSize: 13, color: "#888", fontStyle: "italic" }}>
-        🤝 Små insatser. <span style={{ color: "#EF9F27", fontWeight: 600 }}>Stor skillnad.</span>
-      </p>
-    </div>
-  )
-}
-
-const inputStyle: React.CSSProperties = {
-  width: "100%", padding: "10px 12px", borderRadius: 8,
-  border: "1px solid #e0e0dc", fontFamily: "inherit",
-  fontSize: 14, outline: "none", background: "#fafaf8", color: "#1a1a1a",
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label style={{ display: "block", fontSize: 13, color: "#555", marginBottom: 5, fontWeight: 500 }}>{label}</label>
-      {children}
     </div>
   )
 }

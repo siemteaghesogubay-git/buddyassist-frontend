@@ -11,9 +11,10 @@ import { CreatePage } from "./pages/CreatePage"
 import { ProfilePage } from "./pages/ProfilePage"
 import { LeaderboardPage } from "./pages/LeaderboardPage"
 import { AdminPage } from "./pages/AdminPage"
-import type { CreateMissionForm } from "./types"
 import { ChatPage } from "./pages/ChatPage"
 import { AdsPage } from "./pages/AdsPage"
+import { api } from "./api/client"
+import type { CreateMissionForm } from "./types"
 
 const POINTS_MAP: Record<string, number> = {
   handla: 50, transport: 100, utbildning: 80,
@@ -26,6 +27,7 @@ interface CurrentUser {
   totalPoints: number
   completedMissions: number
   currentLevel: string
+  userId: number
 }
 
 function getLevel(missions: number): string {
@@ -38,31 +40,46 @@ function getLevel(missions: number): string {
   return "ny"
 }
 
+
 function App() {
-  const [loggedIn, setLoggedIn] = useState(false)
-  const [page, setPage] = useState<Page>("hem")
-  const [userId, setUserId] = useState<number>(0)
+  const [loggedIn, setLoggedIn]         = useState(false)
+  const [page, setPage]                 = useState<Page>("hem")
+  const [profileImage, setProfileImage] = useState<string | null>(null)
   const [user, setUser] = useState<CurrentUser>({
     name: "", role: "", totalPoints: 0,
-    completedMissions: 0, currentLevel: "ny",
+    completedMissions: 0, currentLevel: "ny", userId: 0,
   })
   const [completeModal, setCompleteModal] = useState<{ id: number; title: string } | null>(null)
 
   const { missions, takenIds, takeMission, createMission, completeMission, loading } = useMissions()
   const { message, visible, showToast } = useToast()
 
-  const handleLogin = (name: string, role: string, id: number) => {
-    setUserId(id)
-    setUser(prev => ({ ...prev, name, role }))
-    showToast(`Välkommen, ${name}! 👋`)
+  const handleLogin = async (name: string, role: string, id: number) => {
+    setUser(prev => ({ ...prev, name, role, userId: id }))
     setLoggedIn(true)
+    showToast(`Välkommen, ${name}! 👋`)
+
+    // Ladda profilbild från backend direkt vid inloggning
+    try {
+      const res = await api.getProfileImage(id)
+      if (res?.profileImage) {
+        setProfileImage(res.profileImage)
+      } else {
+        setProfileImage(null)
+      }
+    } catch {
+      setProfileImage(null)
+    }
   }
 
   const handleLogout = () => {
     localStorage.removeItem("token")
     setLoggedIn(false)
-    setUserId(0)
-    setUser({ name: "", role: "", totalPoints: 0, completedMissions: 0, currentLevel: "ny" })
+    setProfileImage(null)
+    setUser({
+      name: "", role: "", totalPoints: 0,
+      completedMissions: 0, currentLevel: "ny", userId: 0,
+    })
     setPage("hem")
   }
 
@@ -73,19 +90,24 @@ function App() {
       await takeMission(id)
       setUser(prev => {
         const newMissions = prev.completedMissions + 1
-        const newPoints = prev.totalPoints + (POINTS_MAP[mission.category] ?? 50)
-        return { ...prev, completedMissions: newMissions, totalPoints: newPoints, currentLevel: getLevel(newMissions) }
+        const newPoints   = prev.totalPoints + (POINTS_MAP[mission.category] ?? 50)
+        return {
+          ...prev,
+          completedMissions: newMissions,
+          totalPoints: newPoints,
+          currentLevel: getLevel(newMissions),
+        }
       })
-      showToast(`Uppdrag taget! +${mission.points} poäng väntar 🎉`)
+      showToast(`Uppdrag taget! +${mission.points} poäng 🎉`)
     } catch {
-      showToast("Något gick fel – försök igen")
+      showToast("Något gick fel")
     }
   }
 
   const handleCreate = async (form: CreateMissionForm) => {
     try {
       await createMission(form)
-      showToast("Uppdrag publicerat! Matchar hjälpare...")
+      showToast("Uppdrag publicerat! 🚀")
       setPage("uppdrag")
     } catch {
       showToast("Kunde inte skapa uppdrag")
@@ -102,74 +124,72 @@ function App() {
     if (!completeModal) return
     try {
       await completeMission(completeModal.id, rating, comment)
-      showToast(`Uppdrag slutfört! Betyg ${rating}/5 skickat 🎉`)
+      showToast(`Slutfört! Betyg ${rating}/5 🎉`)
       setCompleteModal(null)
     } catch {
-      showToast("Kunde inte slutföra uppdraget")
+      showToast("Kunde inte slutföra")
     }
   }
 
+  const handleImageUpdate = (base64: string) => {
+    setProfileImage(base64)
+  }
+
   if (!loggedIn) {
-    return (
-      <>
-        <LoginPage onLogin={handleLogin} />
-        <Toast message={message} visible={visible} />
-      </>
-    )
+    return <LoginPage onLogin={handleLogin} />
   }
 
   return (
-    <div style={{ maxWidth: 680 }}>
-      <NavBar current={page} onChange={setPage} role={user.role} />
+    <div style={{ display: "flex", minHeight: "100vh", background: "var(--bg-primary)" }}>
+      <NavBar
+        current={page}
+        onChange={setPage}
+        role={user.role}
+        userName={user.name}
+        profileImage={profileImage}
+      />
 
-      {user.role === "admin" && (
-        <div style={{
-          background: "#FAEEDA", border: "1px solid #EF9F27",
-          borderRadius: 10, padding: "8px 14px", marginBottom: "1rem",
-          display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 13,
-        }}>
-          <span>👑 Du är inloggad som <strong>Admin</strong> – {user.name}</span>
-          <button onClick={handleLogout} style={{ fontFamily: "inherit", fontSize: 12, padding: "4px 12px", borderRadius: 20, border: "1px solid #EF9F27", background: "transparent", color: "#412402", cursor: "pointer" }}>
-            Logga ut
-          </button>
-        </div>
-      )}
-
-      {user.role === "user" && (
-        <div style={{
-          background: "#E1F5EE", border: "1px solid #9FE1CB",
-          borderRadius: 10, padding: "8px 14px", marginBottom: "1rem",
-          display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 13,
-        }}>
-          <span>👋 Välkommen, <strong>{user.name}</strong></span>
-          <button onClick={handleLogout} style={{ fontFamily: "inherit", fontSize: 12, padding: "4px 12px", borderRadius: 20, border: "1px solid #9FE1CB", background: "transparent", color: "#085041", cursor: "pointer" }}>
-            Logga ut
-          </button>
-        </div>
-      )}
-
-      {page === "hem" && (
-        <HomePage
-          missions={missions} takenIds={takenIds}
-          onTake={handleTake} onComplete={handleComplete}
-          currentUserId={userId} totalPoints={user.totalPoints}
-          completedMissions={user.completedMissions}
-          currentLevel={user.currentLevel} loading={loading}
-        />
-      )}
-      {page === "uppdrag" && (
-        <MissionsPage
-          missions={missions} takenIds={takenIds}
-          onTake={handleTake} onComplete={handleComplete}
-          currentUserId={userId}
-        />
-      )}
-      {page === "skapa"    && <CreatePage onCreate={handleCreate} />}
-      {page === "profil"   && <ProfilePage name={user.name} totalPoints={user.totalPoints} completedMissions={user.completedMissions} currentLevel={user.currentLevel} />}
-      {page === "topp"     && <LeaderboardPage />}
-      {page === "admin"    && user.role === "admin" && <AdminPage />}
-      {page === "chatt"    && <ChatPage currentUserId={userId} currentUserName={user.name} />}
-      {page === "annonser" && <AdsPage />}
+      <main style={{
+        flex: 1, padding: "28px 32px",
+        overflowY: "auto", maxWidth: "100%",
+        paddingBottom: 80,
+      }}>
+        {page === "hem" && (
+          <HomePage
+            missions={missions} takenIds={takenIds}
+            onTake={handleTake} onComplete={handleComplete}
+            currentUserId={user.userId}
+            userName={user.name}
+            totalPoints={user.totalPoints}
+            completedMissions={user.completedMissions}
+            currentLevel={user.currentLevel}
+            loading={loading}
+          />
+        )}
+        {page === "uppdrag" && (
+          <MissionsPage
+            missions={missions} takenIds={takenIds}
+            onTake={handleTake} onComplete={handleComplete}
+            currentUserId={user.userId}
+          />
+        )}
+        {page === "skapa"    && <CreatePage onCreate={handleCreate} />}
+        {page === "chatt"    && <ChatPage currentUserId={user.userId} currentUserName={user.name} />}
+        {page === "annonser" && <AdsPage />}
+        {page === "topp"     && <LeaderboardPage />}
+        {page === "profil"   && (
+          <ProfilePage
+            name={user.name}
+            totalPoints={user.totalPoints}
+            completedMissions={user.completedMissions}
+            currentLevel={user.currentLevel}
+            onLogout={handleLogout}
+            profileImage={profileImage}
+            onImageUpdate={handleImageUpdate}
+          />
+        )}
+        {page === "admin" && user.role === "admin" && <AdminPage />}
+      </main>
 
       {completeModal && (
         <CompleteModal
